@@ -892,5 +892,99 @@
     // Run
     init();
   </script>
+<!-- ================= 数据同步插件开始 ================= -->
+<div id="data-manager" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: sans-serif;">
+    <input type="file" id="importFile" style="display: none;" onchange="importData(this)">
+    
+    <button onclick="exportData()" style="
+        padding: 12px 24px; 
+        background: #28a745; 
+        color: white; 
+        border: none; 
+        border-radius: 50px; 
+        margin-right: 10px; 
+        cursor: pointer; 
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.1s;">
+        📤 导出数据 (发给手机)
+    </button>
+    
+    <button onclick="document.getElementById('importFile').click()" style="
+        padding: 12px 24px; 
+        background: #007bff; 
+        color: white; 
+        border: none; 
+        border-radius: 50px; 
+        cursor: pointer; 
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.1s;">
+        📥 导入数据 (接收文件)
+    </button>
+</div>
+
+<script>
+// 导出功能：把所有排课数据打包成一个文件
+function exportData() {
+    if (localStorage.length === 0) {
+        alert('⚠️ 当前没有数据可导出！');
+        return;
+    }
+    const data = JSON.stringify(localStorage);
+    const blob = new Blob([data], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    
+    // 生成带时间戳的文件名，防止混淆
+    const date = new Date();
+    const timeStr = `${date.getMonth()+1}月${date.getDate()}日_${date.getHours()}点${date.getMinutes()}分`;
+    const fileName = `排课数据备份_${timeStr}.json`;
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert(`✅ 数据已导出为：\n${fileName}\n\n请将此文件通过微信/QQ发送到另一台设备。`);
+}
+
+// 导入功能：读取文件并覆盖当前数据
+function importData(input) {
+    const file = input.files,[object Object],;
+    if (!file) return;
+
+    if (!confirm('⚠️ 高能预警：\n\n导入新数据将【覆盖并清空】当前设备上的所有排课记录！\n\n确定要继续吗？')) {
+        input.value = ''; // 取消选择
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            // 1. 清空当前旧数据
+            localStorage.clear();
+            
+            // 2. 写入新数据
+            for (let key in data) {
+                localStorage.setItem(key, data[key]);
+            }
+            
+            alert('🎉 数据恢复成功！页面即将刷新...');
+            location.reload(); // 刷新页面以显示新数据
+            
+        } catch (err) {
+            alert('❌ 导入失败！\n请确保您上传的是正确的 .json 备份文件。');
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+}
+</script>
+<!-- ================= 数据同步插件结束 ================= -->
 </body>
 </html>
